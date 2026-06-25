@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.pytest_cache/
+.ruff_cache/
+data/raw/
+data/processed/
+mlruns/
+mlflow/
+frontend/node_modules/
+frontend/dist/
+load_testing/results/
+.DS_Store

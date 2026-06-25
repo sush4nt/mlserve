@@ -1,0 +1,87 @@
+# Local full stack (Tier 2). The inference app serves the API + UI + /metrics;
+# MLflow, Prometheus, and Grafana run alongside for tracking and observability.
+#
+#   make stack-up      # build + start everything
+#   open http://localhost:8080         (app + UI)
+#   open http://localhost:5001         (MLflow UI)
+#   open http://localhost:3001         (Grafana, admin/admin)
+#   open http://localhost:9090         (Prometheus)
+#
+# Train on the host first (`make pipeline`) so ./artifacts has models; they are
+# mounted into the app container below.
+
+services:
+  app:
+    build: { context: ., dockerfile: Dockerfile }
+    container_name: mlserve-app
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./artifacts:/app/artifacts:ro   # serve host-trained models live
+    environment:
+      MLSERVE_PORT: "8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v2/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks: [mlserve-net]
+    restart: unless-stopped
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.11.0
+    container_name: mlserve-mlflow
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./mlflow:/mlflow
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root /mlflow/artifacts
+      --host 0.0.0.0 --port 5000
+    networks: [mlserve-net]
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: mlserve-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+    depends_on: [app]
+    networks: [mlserve-net]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: mlserve-grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/mlserve-overview.json
+    depends_on: [prometheus]
+    networks: [mlserve-net]
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  mlserve-net:
+    driver: bridge

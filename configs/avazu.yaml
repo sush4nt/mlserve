@@ -1,0 +1,42 @@
+# Avazu CTR — binary classification (predict click / no-click).
+# This file fully describes how the model is engineered, trained, and served.
+name: avazu
+task: classification
+target: click
+mlflow_experiment: avazu-ctr
+registered_model_name: avazu-ctr
+
+py_endpoint: avazu-ctr-xgb-py
+onnx_endpoint: avazu-ctr-xgb-onnx
+
+# --- Feature engineering (training-time only) ---------------------------------
+# device_ip is dropped: ~near-unique per row, no generalisation.
+drop_cols: [id, device_ip]
+# Frequency-encode high-cardinality hashed IDs (value -> training-set count).
+freq_encode_cols: [site_id, site_domain, app_id, app_domain, device_id, device_model]
+# Label-encode low/medium-cardinality categoricals (value -> integer code).
+label_encode_cols: [C1, site_category, app_category, C14, C15, C16, C17, C18, C19, C20, C21]
+
+# --- XGBoost ------------------------------------------------------------------
+xgb_params:
+  objective: "binary:logistic"
+  eval_metric: ["logloss", "auc"]
+  max_depth: 6
+  eta: 0.1
+  subsample: 0.8
+  colsample_bytree: 0.7
+  min_child_weight: 10
+  tree_method: "hist"
+  seed: 42
+num_boost_round: 300
+early_stopping_rounds: 30
+
+# --- Frontend form (friendly inputs; the rest are filled with training medians) -
+form_fields:
+  - {name: hour_of_day, label: "Hour of Day",       default: 14, min: 0, max: 23}
+  - {name: day_of_week, label: "Day of Week",       default: 2,  min: 0, max: 6}
+  - {name: banner_pos,  label: "Banner Position",   default: 0,  min: 0, max: 7}
+  - {name: device_type, label: "Device Type",       default: 1,  min: 0, max: 5}
+  - {name: device_conn_type, label: "Conn Type",    default: 0,  min: 0, max: 5}
+  - {name: site_id,     label: "Site Frequency",    default: 5000, min: 0, max: 1000000}
+  - {name: app_id,      label: "App Frequency",     default: 3000, min: 0, max: 1000000}

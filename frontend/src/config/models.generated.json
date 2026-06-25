@@ -1,0 +1,613 @@
+{
+  "models": [
+    {
+      "id": "avazu-ctr-xgb-py",
+      "displayName": "AVAZU \u2014 Python XGBoost",
+      "task": "classification",
+      "dataset": "avazu",
+      "runtime": "python",
+      "runtimeBadge": "python",
+      "datatype": "FP64",
+      "description": "Predicts click-through probability for a display-ad impression.",
+      "outputLabel": "Click Probability",
+      "outputType": "probability",
+      "comparisonPeer": "avazu-ctr-xgb-onnx",
+      "featureOrder": [
+        "hour_of_day",
+        "day_of_week",
+        "banner_pos",
+        "C1",
+        "site_id",
+        "site_domain",
+        "site_category",
+        "app_id",
+        "app_domain",
+        "app_category",
+        "device_id",
+        "device_model",
+        "device_type",
+        "device_conn_type",
+        "C14",
+        "C15",
+        "C16",
+        "C17",
+        "C18",
+        "C19",
+        "C20",
+        "C21"
+      ],
+      "fields": [
+        {
+          "name": "hour_of_day",
+          "label": "Hour of Day",
+          "default": 14,
+          "min": 0,
+          "max": 23,
+          "editable": true
+        },
+        {
+          "name": "day_of_week",
+          "label": "Day of Week",
+          "default": 2,
+          "min": 0,
+          "max": 6,
+          "editable": true
+        },
+        {
+          "name": "banner_pos",
+          "label": "Banner Position",
+          "default": 0,
+          "min": 0,
+          "max": 7,
+          "editable": true
+        },
+        {
+          "name": "C1",
+          "label": "C1",
+          "default": 5.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "site_id",
+          "label": "Site Frequency",
+          "default": 5000,
+          "min": 0,
+          "max": 1000000,
+          "editable": true
+        },
+        {
+          "name": "site_domain",
+          "label": "site_domain",
+          "default": 1521.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "site_category",
+          "label": "site_category",
+          "default": 13.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "app_id",
+          "label": "App Frequency",
+          "default": 3000,
+          "min": 0,
+          "max": 1000000,
+          "editable": true
+        },
+        {
+          "name": "app_domain",
+          "label": "app_domain",
+          "default": 2841.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "app_category",
+          "label": "app_category",
+          "default": 18.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "device_id",
+          "label": "device_id",
+          "default": 17.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "device_model",
+          "label": "device_model",
+          "default": 1000.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "device_type",
+          "label": "Device Type",
+          "default": 1,
+          "min": 0,
+          "max": 5,
+          "editable": true
+        },
+        {
+          "name": "device_conn_type",
+          "label": "Conn Type",
+          "default": 0,
+          "min": 0,
+          "max": 5,
+          "editable": true
+        },
+        {
+          "name": "C14",
+          "label": "C14",
+          "default": 25.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "C15",
+          "label": "C15",
+          "default": 39.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "C16",
+          "label": "C16",
+          "default": 55.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "C17",
+          "label": "C17",
+          "default": 70.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "C18",
+          "label": "C18",
+          "default": 85.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "C19",
+          "label": "C19",
+          "default": 99.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "C20",
+          "label": "C20",
+          "default": 114.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "C21",
+          "label": "C21",
+          "default": 130.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        }
+      ]
+    },
+    {
+      "id": "avazu-ctr-xgb-onnx",
+      "displayName": "AVAZU \u2014 ONNX Runtime (C++)",
+      "task": "classification",
+      "dataset": "avazu",
+      "runtime": "onnx",
+      "runtimeBadge": "onnx",
+      "datatype": "FP32",
+      "description": "Predicts click-through probability for a display-ad impression.",
+      "outputLabel": "Click Probability",
+      "outputType": "probability",
+      "comparisonPeer": "avazu-ctr-xgb-py",
+      "featureOrder": [
+        "hour_of_day",
+        "day_of_week",
+        "banner_pos",
+        "C1",
+        "site_id",
+        "site_domain",
+        "site_category",
+        "app_id",
+        "app_domain",
+        "app_category",
+        "device_id",
+        "device_model",
+        "device_type",
+        "device_conn_type",
+        "C14",
+        "C15",
+        "C16",
+        "C17",
+        "C18",
+        "C19",
+        "C20",
+        "C21"
+      ],
+      "fields": [
+        {
+          "name": "hour_of_day",
+          "label": "Hour of Day",
+          "default": 14,
+          "min": 0,
+          "max": 23,
+          "editable": true
+        },
+        {
+          "name": "day_of_week",
+          "label": "Day of Week",
+          "default": 2,
+          "min": 0,
+          "max": 6,
+          "editable": true
+        },
+        {
+          "name": "banner_pos",
+          "label": "Banner Position",
+          "default": 0,
+          "min": 0,
+          "max": 7,
+          "editable": true
+        },
+        {
+          "name": "C1",
+          "label": "C1",
+          "default": 5.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "site_id",
+          "label": "Site Frequency",
+          "default": 5000,
+          "min": 0,
+          "max": 1000000,
+          "editable": true
+        },
+        {
+          "name": "site_domain",
+          "label": "site_domain",
+          "default": 1521.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "site_category",
+          "label": "site_category",
+          "default": 13.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "app_id",
+          "label": "App Frequency",
+          "default": 3000,
+          "min": 0,
+          "max": 1000000,
+          "editable": true
+        },
+        {
+          "name": "app_domain",
+          "label": "app_domain",
+          "default": 2841.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "app_category",
+          "label": "app_category",
+          "default": 18.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "device_id",
+          "label": "device_id",
+          "default": 17.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "device_model",
+          "label": "device_model",
+          "default": 1000.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "device_type",
+          "label": "Device Type",
+          "default": 1,
+          "min": 0,
+          "max": 5,
+          "editable": true
+        },
+        {
+          "name": "device_conn_type",
+          "label": "Conn Type",
+          "default": 0,
+          "min": 0,
+          "max": 5,
+          "editable": true
+        },
+        {
+          "name": "C14",
+          "label": "C14",
+          "default": 25.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "C15",
+          "label": "C15",
+          "default": 39.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "C16",
+          "label": "C16",
+          "default": 55.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "C17",
+          "label": "C17",
+          "default": 70.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "C18",
+          "label": "C18",
+          "default": 85.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "C19",
+          "label": "C19",
+          "default": 99.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "C20",
+          "label": "C20",
+          "default": 114.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "C21",
+          "label": "C21",
+          "default": 130.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        }
+      ]
+    },
+    {
+      "id": "nyc-taxi-fare-py",
+      "displayName": "NYC_TAXI \u2014 Python XGBoost",
+      "task": "regression",
+      "dataset": "nyc_taxi",
+      "runtime": "python",
+      "runtimeBadge": "python",
+      "datatype": "FP64",
+      "description": "Predicts taxi fare amount in USD from trip features.",
+      "outputLabel": "Predicted Fare (USD)",
+      "outputType": "value",
+      "comparisonPeer": null,
+      "featureOrder": [
+        "passenger_count",
+        "pickup_longitude",
+        "pickup_latitude",
+        "dropoff_longitude",
+        "dropoff_latitude",
+        "hour",
+        "day_of_week",
+        "month",
+        "year",
+        "is_rush",
+        "is_weekend",
+        "trip_km",
+        "jfk_pickup_km",
+        "jfk_dropoff_km",
+        "lga_pickup_km",
+        "lga_dropoff_km",
+        "ewr_pickup_km",
+        "ewr_dropoff_km"
+      ],
+      "fields": [
+        {
+          "name": "passenger_count",
+          "label": "Passengers",
+          "default": 1,
+          "min": 1,
+          "max": 6,
+          "editable": true
+        },
+        {
+          "name": "pickup_longitude",
+          "label": "Pickup Longitude",
+          "default": -73.985,
+          "min": null,
+          "max": null,
+          "editable": true
+        },
+        {
+          "name": "pickup_latitude",
+          "label": "Pickup Latitude",
+          "default": 40.758,
+          "min": null,
+          "max": null,
+          "editable": true
+        },
+        {
+          "name": "dropoff_longitude",
+          "label": "Dropoff Longitude",
+          "default": -73.978,
+          "min": null,
+          "max": null,
+          "editable": true
+        },
+        {
+          "name": "dropoff_latitude",
+          "label": "Dropoff Latitude",
+          "default": 40.751,
+          "min": null,
+          "max": null,
+          "editable": true
+        },
+        {
+          "name": "hour",
+          "label": "Hour of Day",
+          "default": 14,
+          "min": 0,
+          "max": 23,
+          "editable": true
+        },
+        {
+          "name": "day_of_week",
+          "label": "day_of_week",
+          "default": 3.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "month",
+          "label": "month",
+          "default": 6.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "year",
+          "label": "year",
+          "default": 2011.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "is_rush",
+          "label": "is_rush",
+          "default": 0.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "is_weekend",
+          "label": "is_weekend",
+          "default": 0.0,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "trip_km",
+          "label": "trip_km",
+          "default": 3.4429,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "jfk_pickup_km",
+          "label": "jfk_pickup_km",
+          "default": 19.8749,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "jfk_dropoff_km",
+          "label": "jfk_dropoff_km",
+          "default": 20.0305,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "lga_pickup_km",
+          "label": "lga_pickup_km",
+          "default": 10.6515,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "lga_dropoff_km",
+          "label": "lga_dropoff_km",
+          "default": 10.9652,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "ewr_pickup_km",
+          "label": "ewr_pickup_km",
+          "default": 18.8502,
+          "min": null,
+          "max": null,
+          "editable": false
+        },
+        {
+          "name": "ewr_dropoff_km",
+          "label": "ewr_dropoff_km",
+          "default": 19.0233,
+          "min": null,
+          "max": null,
+          "editable": false
+        }
+      ]
+    }
+  ]
+}
