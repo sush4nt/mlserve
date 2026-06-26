@@ -32,3 +32,4 @@ load_testing/results/
 .DS_Store
 .idea/
 .vscode/
+.env
