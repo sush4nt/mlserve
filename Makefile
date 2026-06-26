@@ -1,9 +1,9 @@
 # mlserve — common workflows. Run `make help` for the list.
 # All Python commands go through uv so the environment is always reproducible.
 
-ROWS    ?= 100000          # rows for the demo pipeline (synthetic)
-SOURCE  ?= synthetic       # synthetic | kaggle
-DATASET ?= all             # all | avazu | nyc_taxi
+ROWS    ?= 3000000          # rows for the demo pipeline (synthetic)
+SOURCE  ?= kaggle       	# synthetic | kaggle
+DATASET ?= all             	# all | avazu | nyc_taxi
 
 .DEFAULT_GOAL := help
 .PHONY: help install pipeline prepare train export register frontend-config \

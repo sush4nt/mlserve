@@ -64,7 +64,7 @@
         {
           "name": "C1",
           "label": "C1",
-          "default": 5.0,
+          "default": 2.0,
           "min": null,
           "max": null,
           "editable": false
@@ -80,7 +80,7 @@
         {
           "name": "site_domain",
           "label": "site_domain",
-          "default": 1521.0,
+          "default": 445222.0,
           "min": null,
           "max": null,
           "editable": false
@@ -88,7 +88,7 @@
         {
           "name": "site_category",
           "label": "site_category",
-          "default": 13.0,
+          "default": 6.0,
           "min": null,
           "max": null,
           "editable": false
@@ -104,7 +104,7 @@
         {
           "name": "app_domain",
           "label": "app_domain",
-          "default": 2841.0,
+          "default": 1645400.0,
           "min": null,
           "max": null,
           "editable": false
@@ -112,7 +112,7 @@
         {
           "name": "app_category",
           "label": "app_category",
-          "default": 18.0,
+          "default": 0.0,
           "min": null,
           "max": null,
           "editable": false
@@ -120,7 +120,7 @@
         {
           "name": "device_id",
           "label": "device_id",
-          "default": 17.0,
+          "default": 1999935.0,
           "min": null,
           "max": null,
           "editable": false
@@ -128,7 +128,7 @@
         {
           "name": "device_model",
           "label": "device_model",
-          "default": 1000.0,
+          "default": 9837.0,
           "min": null,
           "max": null,
           "editable": false
@@ -152,7 +152,7 @@
         {
           "name": "C14",
           "label": "C14",
-          "default": 25.0,
+          "default": 360.0,
           "min": null,
           "max": null,
           "editable": false
@@ -160,7 +160,7 @@
         {
           "name": "C15",
           "label": "C15",
-          "default": 39.0,
+          "default": 3.0,
           "min": null,
           "max": null,
           "editable": false
@@ -168,7 +168,7 @@
         {
           "name": "C16",
           "label": "C16",
-          "default": 55.0,
+          "default": 2.0,
           "min": null,
           "max": null,
           "editable": false
@@ -176,7 +176,7 @@
         {
           "name": "C17",
           "label": "C17",
-          "default": 70.0,
+          "default": 91.0,
           "min": null,
           "max": null,
           "editable": false
@@ -184,7 +184,7 @@
         {
           "name": "C18",
           "label": "C18",
-          "default": 85.0,
+          "default": 2.0,
           "min": null,
           "max": null,
           "editable": false
@@ -192,7 +192,7 @@
         {
           "name": "C19",
           "label": "C19",
-          "default": 99.0,
+          "default": 3.0,
           "min": null,
           "max": null,
           "editable": false
@@ -200,7 +200,7 @@
         {
           "name": "C20",
           "label": "C20",
-          "default": 114.0,
+          "default": 0.0,
           "min": null,
           "max": null,
           "editable": false
@@ -208,7 +208,7 @@
         {
           "name": "C21",
           "label": "C21",
-          "default": 130.0,
+          "default": 13.0,
           "min": null,
           "max": null,
           "editable": false
@@ -279,7 +279,7 @@
         {
           "name": "C1",
           "label": "C1",
-          "default": 5.0,
+          "default": 2.0,
           "min": null,
           "max": null,
           "editable": false
@@ -295,7 +295,7 @@
         {
           "name": "site_domain",
           "label": "site_domain",
-          "default": 1521.0,
+          "default": 445222.0,
           "min": null,
           "max": null,
           "editable": false
@@ -303,7 +303,7 @@
         {
           "name": "site_category",
           "label": "site_category",
-          "default": 13.0,
+          "default": 6.0,
           "min": null,
           "max": null,
           "editable": false
@@ -319,7 +319,7 @@
         {
           "name": "app_domain",
           "label": "app_domain",
-          "default": 2841.0,
+          "default": 1645400.0,
           "min": null,
           "max": null,
           "editable": false
@@ -327,7 +327,7 @@
         {
           "name": "app_category",
           "label": "app_category",
-          "default": 18.0,
+          "default": 0.0,
           "min": null,
           "max": null,
           "editable": false
@@ -335,7 +335,7 @@
         {
           "name": "device_id",
           "label": "device_id",
-          "default": 17.0,
+          "default": 1999935.0,
           "min": null,
           "max": null,
           "editable": false
@@ -343,7 +343,7 @@
         {
           "name": "device_model",
           "label": "device_model",
-          "default": 1000.0,
+          "default": 9837.0,
           "min": null,
           "max": null,
           "editable": false
@@ -367,7 +367,7 @@
         {
           "name": "C14",
           "label": "C14",
-          "default": 25.0,
+          "default": 360.0,
           "min": null,
           "max": null,
           "editable": false
@@ -375,7 +375,7 @@
         {
           "name": "C15",
           "label": "C15",
-          "default": 39.0,
+          "default": 3.0,
           "min": null,
           "max": null,
           "editable": false
@@ -383,7 +383,7 @@
         {
           "name": "C16",
           "label": "C16",
-          "default": 55.0,
+          "default": 2.0,
           "min": null,
           "max": null,
           "editable": false
@@ -391,7 +391,7 @@
         {
           "name": "C17",
           "label": "C17",
-          "default": 70.0,
+          "default": 91.0,
           "min": null,
           "max": null,
           "editable": false
@@ -399,7 +399,7 @@
         {
           "name": "C18",
           "label": "C18",
-          "default": 85.0,
+          "default": 2.0,
           "min": null,
           "max": null,
           "editable": false
@@ -407,7 +407,7 @@
         {
           "name": "C19",
           "label": "C19",
-          "default": 99.0,
+          "default": 3.0,
           "min": null,
           "max": null,
           "editable": false
@@ -415,7 +415,7 @@
         {
           "name": "C20",
           "label": "C20",
-          "default": 114.0,
+          "default": 0.0,
           "min": null,
           "max": null,
           "editable": false
@@ -423,7 +423,7 @@
         {
           "name": "C21",
           "label": "C21",
-          "default": 130.0,
+          "default": 13.0,
           "min": null,
           "max": null,
           "editable": false
@@ -554,7 +554,7 @@
         {
           "name": "trip_km",
           "label": "trip_km",
-          "default": 3.4429,
+          "default": 2.1507,
           "min": null,
           "max": null,
           "editable": false
@@ -562,7 +562,7 @@
         {
           "name": "jfk_pickup_km",
           "label": "jfk_pickup_km",
-          "default": 19.8749,
+          "default": 21.195,
           "min": null,
           "max": null,
           "editable": false
@@ -570,7 +570,7 @@
         {
           "name": "jfk_dropoff_km",
           "label": "jfk_dropoff_km",
-          "default": 20.0305,
+          "default": 21.189,
           "min": null,
           "max": null,
           "editable": false
@@ -578,7 +578,7 @@
         {
           "name": "lga_pickup_km",
           "label": "lga_pickup_km",
-          "default": 10.6515,
+          "default": 9.6108,
           "min": null,
           "max": null,
           "editable": false
@@ -586,7 +586,7 @@
         {
           "name": "lga_dropoff_km",
           "label": "lga_dropoff_km",
-          "default": 10.9652,
+          "default": 9.5199,
           "min": null,
           "max": null,
           "editable": false
@@ -594,7 +594,7 @@
         {
           "name": "ewr_pickup_km",
           "label": "ewr_pickup_km",
-          "default": 18.8502,
+          "default": 17.8202,
           "min": null,
           "max": null,
           "editable": false
@@ -602,7 +602,7 @@
         {
           "name": "ewr_dropoff_km",
           "label": "ewr_dropoff_km",
-          "default": 19.0233,
+          "default": 17.9673,
           "min": null,
           "max": null,
           "editable": false
