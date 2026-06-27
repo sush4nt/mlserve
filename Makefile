@@ -5,6 +5,10 @@ ROWS    ?= 3000000          # rows for the demo pipeline (synthetic)
 SOURCE  ?= kaggle       	# synthetic | kaggle
 DATASET ?= all             	# all | avazu | nyc_taxi
 
+# Where train/register log runs to. Overridden by stack-up so the pipeline writes
+# straight into the Dockerized mlflow service instead of the local file store.
+MLFLOW_TRACKING_URI ?= file:$(CURDIR)/mlruns
+
 .DEFAULT_GOAL := help
 .PHONY: help install pipeline prepare train export register frontend-config \
         serve test lint frontend-build stack-up stack-down clean download-data
@@ -21,14 +25,14 @@ pipeline: prepare train export register frontend-config  ## Full local pipeline 
 prepare:  ## Generate/prepare processed data (SOURCE/ROWS/DATASET overridable)
 	uv run mlserve-prepare --dataset $(DATASET) --source $(SOURCE) --rows $(ROWS)
 
-train:  ## Train models and log to MLflow
-	uv run mlserve-train --dataset $(DATASET)
+train:  ## Train models and log to MLflow (MLFLOW_TRACKING_URI overridable)
+	MLFLOW_TRACKING_URI=$(MLFLOW_TRACKING_URI) uv run mlserve-train --dataset $(DATASET)
 
 export:  ## Export the Avazu model to ONNX (validated)
 	uv run mlserve-export --dataset avazu
 
 register:  ## Promote latest model versions to Production in MLflow
-	uv run mlserve-register
+	MLFLOW_TRACKING_URI=$(MLFLOW_TRACKING_URI) uv run mlserve-register
 
 frontend-config:  ## Regenerate the frontend model config from artifacts
 	uv run mlserve-frontend-config
@@ -45,7 +49,9 @@ lint:  ## Lint with ruff
 frontend-build:  ## Build the React frontend into frontend/dist
 	cd frontend && npm install && npm run build
 
-stack-up: frontend-config  ## Build + start the full Docker stack (app, mlflow, prometheus, grafana)
+stack-up:  ## Start mlflow, train against it, then build + start the rest (app, prometheus, grafana)
+	docker compose up --build -d --wait mlflow
+	$(MAKE) pipeline MLFLOW_TRACKING_URI=http://localhost:5001
 	docker compose up --build -d
 
 stack-down:  ## Stop the Docker stack
