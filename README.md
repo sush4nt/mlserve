@@ -138,13 +138,17 @@ Want the live MLflow UI without Docker? `make mlflow-ui` (reads `./mlruns`).
 
 ## Tier 2 — full local stack with Docker Compose
 
-Adds the live MLflow UI, Prometheus, and Grafana around the app. Train on the host
-first so `./artifacts` has models (they're mounted into the app container).
+Adds the live MLflow UI, Prometheus, and Grafana around the app.
 
 ```bash
-make pipeline          # produce models on the host
-make stack-up          # docker compose up --build -d
+make stack-up          # trains on the host, then docker compose up --build -d
 ```
+
+`stack-up` runs the full pipeline first so `./artifacts` has models (mounted into
+the app container, read-only) and `./mlruns` has runs (mounted straight into the
+mlflow container as its backend store). The Dockerized MLflow UI reads the same
+`./mlruns` directory as `make mlflow-ui` — there's no separate store to keep in
+sync, so runs from `make pipeline`/`make train` show up immediately either way.
 
 | Service | URL | Notes |
 |---|---|---|
