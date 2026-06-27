@@ -102,7 +102,9 @@ on synthetic data.
 make install                 # uv sync (creates .venv, installs everything)
 
 # 1-4. Full pipeline: data -> train -> ONNX -> register -> frontend config
-make pipeline                # ROWS=100000 SOURCE=synthetic by default
+# The Makefile defaults to SOURCE=kaggle ROWS=3000000; pass SOURCE=synthetic
+# for the zero-setup path that requires no Kaggle account.
+make pipeline SOURCE=synthetic ROWS=100000
 
 # 5. Build the UI (optional; the API works without it)
 make frontend-build
@@ -138,13 +140,22 @@ Want the live MLflow UI without Docker? `make mlflow-ui` (reads `./mlruns`).
 
 ## Tier 2 — full local stack with Docker Compose
 
-Adds the live MLflow UI, Prometheus, and Grafana around the app. Train on the host
-first so `./artifacts` has models (they're mounted into the app container).
+Adds the live MLflow UI, Prometheus, and Grafana around the app.
 
 ```bash
-make pipeline          # produce models on the host
-make stack-up          # docker compose up --build -d
+# With Kaggle data (default, requires ~/.kaggle/kaggle.json):
+make stack-up
+
+# With synthetic data (zero-setup):
+make stack-up SOURCE=synthetic ROWS=100000
 ```
+
+`stack-up` starts the MLflow container, runs the full pipeline against it
+(`$(MAKE) pipeline MLFLOW_TRACKING_URI=http://localhost:5001`), then brings up
+the rest of the stack. `./artifacts` is volume-mounted into the app container
+(read-only) and `./mlruns` is mounted straight into the mlflow container, so
+runs from `make pipeline`/`make train` show up in both `make mlflow-ui` and the
+Dockerized MLflow UI without any sync step.
 
 | Service | URL | Notes |
 |---|---|---|
@@ -193,6 +204,34 @@ The feature-engineering and model code are identical for synthetic and real data
 
 ---
 
+## Frontend: 7 editable inputs, 22 model features
+
+The Avazu model is always called with all **22 features**. The UI only exposes
+**7 editable fields** (hour, day, banner position, device type, connection type,
+site frequency, app frequency). This is a deliberate UX choice, not a model
+simplification.
+
+How it works end-to-end:
+
+1. `configs/avazu.yaml` lists 7 `form_fields` — these become `editable: true`
+   entries in `models.generated.json`.
+2. All 22 features appear in `models.generated.json` under `fields`; the 15
+   non-listed ones carry `editable: false` and a `default` equal to the
+   **training-set median** (written by `features/base.py` into `feature_meta.json`
+   during preprocessing).
+3. `PredictionForm.jsx`'s `assembleVector()` builds the full 22-element vector:
+   editable slots use the user's typed value; hidden slots use the stored median.
+4. The V2 request is sent with `shape: [1, 22]` and the server validates
+   `arr.shape[1] == runner.n_features` (22) before calling the model.
+
+The 15 hidden features are hashed ad-tech IDs (`site_domain`, `app_domain`,
+`device_id`, `C14`…`C21`) whose frequency-encoded integers are only meaningful
+relative to the training distribution — there is no sensible "user-entered"
+value for them. Pinning them to the training median is the standard serving
+strategy for features a real-time caller cannot provide.
+
+---
+
 ## The Python vs ONNX comparison
 
 Both `avazu-ctr-xgb-py` and `avazu-ctr-xgb-onnx` serve the **same trained booster**
@@ -217,12 +256,34 @@ you actually measure. That honesty is itself a good interview signal.
 
 k6 is a standalone Go binary (install: <https://k6.io/docs/get-started/installation/>).
 
+There are two scripts:
+
+| Script | Purpose |
+|---|---|
+| `load_testing/avazu_comparison.js` | Hammers `avazu-ctr-xgb-py` and `avazu-ctr-xgb-onnx` head-to-head. Ramps to 80 VUs with a spike stage. Tracks `py_inference_ms` and `onnx_inference_ms` as separate k6 Trend metrics. |
+| `load_testing/full_stack.js` | Exercises all three endpoints together (avazu-py, avazu-onnx, nyc-taxi-py) — useful for populating every Grafana panel with traffic. |
+
 ```bash
-k6 run load_testing/avazu_comparison.js                 # ramps to 80 VUs, py vs onnx
+# Head-to-head Python vs ONNX comparison (ramps to 80 VUs):
+k6 run load_testing/avazu_comparison.js
 k6 run --out json=load_testing/results/avazu.json load_testing/avazu_comparison.js
-# Against a deployed target:
+
+# All three endpoints (populates all Grafana panels):
+k6 run load_testing/full_stack.js
+
+# Against a deployed target (HF Spaces, Render, etc.):
 k6 run -e BASE_URL=https://<user>-mlserve.hf.space load_testing/avazu_comparison.js
 ```
+
+**Why Python ≈ ONNX on synthetic data.** A model trained on the default 100 000
+synthetic rows is small (few trees, shallow depth). At that size, a single
+tree-prediction takes ~0.01–0.1 ms, which is completely swamped by HTTP
+round-trip and FastAPI/JSON overhead (~5–20 ms). Both engines finish inference
+before the framework even processes the response. The divergence the project is
+built to show — ONNX winning on tail latency at concurrency — requires the
+**full Avazu model** (trained on millions of real rows, deeper trees, 300 boost
+rounds) hit with the 80-VU spike stage. Train on real Kaggle data first, then
+run the comparison and report what you actually measure.
 
 Watch the Grafana latency panel during the spike and screenshot it — that's your
 evidence.
@@ -248,8 +309,24 @@ total predictions, and taxi p95 — and auto-provisions on `make stack-up`.
 ## Testing & linting
 
 ```bash
-make test     # pytest: end-to-end pipeline + V2 round-trip + generator signal
-make lint     # ruff
+make test     # pytest tests/test_pipeline.py
+make lint     # ruff check src tests
+```
+
+`tests/test_pipeline.py` is the single end-to-end test file. It runs the full
+in-memory pipeline on tiny synthetic data — no external services, no disk
+fixtures, no Kaggle account needed. What each test covers:
+
+| Test | What it checks |
+|---|---|
+| `test_preprocess_feature_count[avazu-22]` | `AvazuPreprocessor` produces exactly 22 features, in the canonical `FEATURE_ORDER` from `features/avazu.py`; the val split has no NaN (no encoder leakage). |
+| `test_preprocess_feature_count[nyc_taxi-18]` | Same guarantee for the Taxi preprocessor and its 18 haversine + temporal features. |
+| `test_avazu_has_learnable_signal` | Trains a mini XGBoost on 20 000 synthetic rows and asserts `val_auc > 0.6` — guards the synthetic generator against accidentally producing random noise. |
+| `test_v2_protocol_roundtrip` | Round-trips an `InferRequest` through `request_to_array` and `array_to_response`; checks shape, dtype, and output values are preserved correctly by the V2 pydantic models. |
+
+Run a single test by name:
+```bash
+uv run --extra dev pytest -q -k test_v2_protocol_roundtrip
 ```
 
 ---

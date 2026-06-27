@@ -7,8 +7,10 @@
 #   open http://localhost:3001         (Grafana, admin/admin)
 #   open http://localhost:9090         (Prometheus)
 #
-# Train on the host first (`make pipeline`) so ./artifacts has models; they are
-# mounted into the app container below.
+# `make stack-up` runs the training pipeline on the host first, so ./artifacts has
+# models (mounted into the app container) and ./mlruns has runs (mounted straight
+# into the mlflow container as its backend store — no separate `make mlflow-ui`
+# step needed, the Dockerized UI reads the exact same runs).
 
 services:
   app:
@@ -36,11 +38,18 @@ services:
       - "5001:5000"
     volumes:
       - ./mlflow:/mlflow
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     command: >
       mlflow server
       --backend-store-uri sqlite:////mlflow/mlflow.db
-      --default-artifact-root /mlflow/artifacts
+      --artifacts-destination /mlflow/artifacts
       --host 0.0.0.0 --port 5000
+      --gunicorn-opts "--timeout 120"
     networks: [mlserve-net]
     restart: unless-stopped
 
