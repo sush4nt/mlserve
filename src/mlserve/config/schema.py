@@ -22,7 +22,7 @@ class FeatureField:
     """A user-facing input field exposed by the frontend form.
 
     `editable=False` fields are not shown; they are filled with `default` when
-    assembling the full serving vector. This is how a human enters 6 friendly
+    assembling the full serving vector. This is how a human enters 7 friendly
     values yet the model still receives all 22.
     """
 
