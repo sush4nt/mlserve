@@ -255,6 +255,108 @@ The feature-engineering and model code are identical for synthetic and real data
 
 ---
 
+## Frontend: how the UI is built and served
+
+This section is written for a reader with a Python/data-science background and
+**no prior JavaScript experience**. It explains what the frontend actually is,
+which libraries it uses and why, how the code is organized, and how it gets
+from source files to something your browser renders — the JS equivalent of
+"here's your `venv`, here's `pip install`, here's how `uvicorn` serves it."
+
+### What it is, in one sentence
+
+A small **React single-page app** that renders a form, calls the exact same
+`/v2/models/{name}/infer` HTTP endpoint you could `curl`, and displays the
+JSON response — it is a UI client of the API, not a separate backend.
+
+### The JavaScript tooling, mapped to Python equivalents
+
+If you've never touched the JS ecosystem, these four names look interchangeable
+but aren't — each solves a different problem, the same way `pip`, `venv`,
+`pytest`, and a `.py` file all coexist in a Python project:
+
+| JS concept | What it is | Closest Python analogy |
+|---|---|---|
+| **Node.js** | A JS runtime that can run outside the browser (e.g. on your laptop, in CI). | The Python interpreter. |
+| **npm** | Node's package manager; reads `package.json`/`package-lock.json` and installs into `node_modules/`. | `pip` + `requirements.txt`/`uv.lock`. |
+| **Vite** | A *build tool*: compiles JSX into plain JS, bundles all files into a few optimized `.js`/`.css` files, and (in dev) hot-reloads the browser on save. | Roughly `uv build` + a dev autoreloader in one; there's no build step in Python because the interpreter reads `.py` directly, but browsers can't read JSX, so JS projects need this compile step. | 
+| **React** | A UI library: describe the page as components (functions that return HTML-like markup called JSX) and React re-renders only what changed when state updates. | The templating layer — think Jinja2, but re-run automatically whenever data changes instead of once per request. |
+
+**Why npm/Node is involved at all**, since this is an ML project: browsers only
+understand HTML/CSS/plain JS, but the source is written in JSX (HTML mixed into
+JS) using modern syntax browsers can't parse directly. Node + npm + Vite exist
+purely to *translate and bundle* that source into files a browser can load —
+this happens once at build time. **Node is not part of the running service**:
+after `npm run build` produces static files in `frontend/dist/`, FastAPI serves
+those files directly (`StaticFiles` mount in `app.py`) and no JS process runs
+in production, just like compiling a `.pyx` Cython file once and shipping the
+compiled artifact.
+
+### Libraries used and what each one is for
+
+| Package | Role |
+|---|---|
+| `react`, `react-dom` | Component model + rendering the component tree into the browser DOM. |
+| `axios` | HTTP client for calling the V2 API — the JS equivalent of Python's `requests`. |
+| `recharts` | Chart library used only by the comparison panel to plot Python-vs-ONNX latency bars. |
+| `vite`, `@vitejs/plugin-react` | Dev server + production bundler (see table above); the plugin teaches Vite to compile JSX. |
+| `tailwindcss`, `postcss`, `autoprefixer` | Utility-class CSS (e.g. `className="rounded-xl bg-slate-800 p-6"` instead of writing separate `.css` rules) plus the tooling that generates the final stylesheet. |
+
+### Code structure
+
+```
+frontend/
+|-- package.json              # dependency list + npm scripts (dev/build/preview) — like pyproject.toml
+|-- vite.config.js            # build config; also proxies /v2 to :8080 during `npm run dev`
+|-- tailwind.config.js        # which files Tailwind scans for class names
+|-- index.html                # the one real HTML file; React mounts into its <div id="root">
++-- src/
+    |-- main.jsx               # entry point: renders <App /> into index.html
+    |-- App.jsx                # top-level layout: model picker, header, wires everything together
+    |-- index.css              # Tailwind's base/utility imports
+    |-- config/
+    |   +-- models.generated.json   # NOT hand-written — see below
+    |-- services/
+    |   +-- api.js              # one function: POST to /v2/models/{id}/infer via axios
+    +-- components/
+        |-- PredictionForm.jsx  # renders editable fields, assembles the full feature vector, calls the API
+        |-- ComparisonPanel.jsx # calls the Python AND ONNX Avazu endpoints and charts latency side by side
+        +-- ResultDisplay.jsx   # formats the prediction (probability vs. dollar value)
+```
+
+**Nothing here hardcodes a model name or a feature list.** `models.generated.json`
+is produced by `uv run mlserve-frontend-config` (see `frontend_config.py`) from
+the same `configs/*.yaml` and `feature_meta.json` the training pipeline
+produces — so the UI can never drift from what the models actually expect.
+Adding a model is a config change, not a React change.
+
+### How a click becomes a prediction
+
+1. `App.jsx` loads `models.generated.json` at import time and renders a button
+   per model plus the fields for whichever one is selected.
+2. `PredictionForm.jsx` shows only the fields marked `editable: true`; typing
+   updates local component state (`useState`), not the file on disk.
+3. On **Predict**, `assembleVector()` rebuilds the *full* ordered feature array
+   — typed values for editable slots, training-median `default` for hidden
+   ones — and `services/api.js` POSTs it as a KServe V2 payload via `axios`.
+4. FastAPI's `/v2/models/{name}/infer` handles it exactly like a `curl` call
+   would; the JSON response (predicted value + client-measured latency) is
+   rendered by `ResultDisplay.jsx`.
+
+### Dev vs. production — two different ways this gets served
+
+| Mode | Command | What's running |
+|---|---|---|
+| **Development** | `cd frontend && npm run dev` | Vite's own dev server on a JS port, hot-reloading on save; it proxies `/v2` calls to `:8080` (see `vite.config.js`) so the browser sees one origin while the FastAPI server runs separately via `uv run mlserve-serve`. |
+| **Production** | `make frontend-build` (`npm install && npm run build`) → `make serve` | Vite compiles everything into static files under `frontend/dist/`; FastAPI mounts that directory (`app.py`) and serves it at `/` alongside the API. One process, one port, no Node at runtime. |
+
+`make serve` (Tier 1) and the `Dockerfile` (Tiers 2/3) both use the production
+path — the React app you see at <http://localhost:8080> is just static
+HTML/CSS/JS files being handed out by FastAPI's `StaticFiles`, indistinguishable
+from any other static asset.
+
+---
+
 ## Frontend: 7 editable inputs, 22 model features
 
 The Avazu model is always called with all **22 features**. The UI only exposes
@@ -280,6 +382,18 @@ The 15 hidden features are hashed ad-tech IDs (`site_domain`, `app_domain`,
 relative to the training distribution — there is no sensible "user-entered"
 value for them. Pinning them to the training median is the standard serving
 strategy for features a real-time caller cannot provide.
+
+**A `hint` field for non-obvious inputs.** The Taxi form's four coordinate
+fields (`pickup_longitude/latitude`, `dropoff_longitude/latitude`) are
+pre-filled with a valid Manhattan trip by default, but typing an arbitrary
+number into a bare "Longitude" box is easy to get wrong (wrong sign, wrong
+range, lat/lon swapped). `FeatureField` in `config/schema.py` supports an
+optional `hint: str` per field, set in `configs/nyc_taxi.yaml`; it flows
+through `frontend_config.py` into `models.generated.json` and is rendered by
+`PredictionForm.jsx` as small helper text under the input (e.g. *"Decimal
+degrees, negative = West. NYC ranges roughly -74.05 to -73.70"*). Add a `hint`
+to any field in any `configs/*.yaml` and regenerate
+(`make frontend-config`) to get the same treatment.
 
 ---
 

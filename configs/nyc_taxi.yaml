@@ -28,9 +28,29 @@ num_boost_round: 400
 early_stopping_rounds: 30
 
 form_fields:
-  - {name: pickup_longitude,  label: "Pickup Longitude",  default: -73.985}
-  - {name: pickup_latitude,   label: "Pickup Latitude",   default: 40.758}
-  - {name: dropoff_longitude, label: "Dropoff Longitude",  default: -73.978}
-  - {name: dropoff_latitude,  label: "Dropoff Latitude",   default: 40.751}
+  - name: pickup_longitude
+    label: "Pickup Longitude"
+    default: -73.985
+    min: -74.05
+    max: -73.70
+    hint: "Decimal degrees, negative = West. NYC ranges roughly -74.05 to -73.70 (prefilled = Manhattan)."
+  - name: pickup_latitude
+    label: "Pickup Latitude"
+    default: 40.758
+    min: 40.55
+    max: 40.90
+    hint: "Decimal degrees, positive = North. NYC ranges roughly 40.55 to 40.90 (prefilled = Manhattan)."
+  - name: dropoff_longitude
+    label: "Dropoff Longitude"
+    default: -73.978
+    min: -74.05
+    max: -73.70
+    hint: "Same format as pickup longitude — decimal degrees, negative = West."
+  - name: dropoff_latitude
+    label: "Dropoff Latitude"
+    default: 40.751
+    min: 40.55
+    max: 40.90
+    hint: "Same format as pickup latitude — decimal degrees, positive = North."
   - {name: passenger_count,   label: "Passengers",         default: 1, min: 1, max: 6}
   - {name: hour,              label: "Hour of Day",        default: 14, min: 0, max: 23}

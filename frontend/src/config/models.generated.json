@@ -43,7 +43,8 @@
           "default": 14,
           "min": 0,
           "max": 23,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "day_of_week",
@@ -51,7 +52,8 @@
           "default": 2,
           "min": 0,
           "max": 6,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "banner_pos",
@@ -59,12 +61,13 @@
           "default": 0,
           "min": 0,
           "max": 7,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "C1",
           "label": "C1",
-          "default": 2.0,
+          "default": 6.0,
           "min": null,
           "max": null,
           "editable": false
@@ -75,12 +78,13 @@
           "default": 5000,
           "min": 0,
           "max": 1000000,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "site_domain",
           "label": "site_domain",
-          "default": 445222.0,
+          "default": 168.0,
           "min": null,
           "max": null,
           "editable": false
@@ -88,7 +92,7 @@
         {
           "name": "site_category",
           "label": "site_category",
-          "default": 6.0,
+          "default": 13.0,
           "min": null,
           "max": null,
           "editable": false
@@ -99,12 +103,13 @@
           "default": 3000,
           "min": 0,
           "max": 1000000,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "app_domain",
           "label": "app_domain",
-          "default": 1645400.0,
+          "default": 288.0,
           "min": null,
           "max": null,
           "editable": false
@@ -112,7 +117,7 @@
         {
           "name": "app_category",
           "label": "app_category",
-          "default": 0.0,
+          "default": 17.0,
           "min": null,
           "max": null,
           "editable": false
@@ -120,7 +125,7 @@
         {
           "name": "device_id",
           "label": "device_id",
-          "default": 1999935.0,
+          "default": 2.0,
           "min": null,
           "max": null,
           "editable": false
@@ -128,7 +133,7 @@
         {
           "name": "device_model",
           "label": "device_model",
-          "default": 9837.0,
+          "default": 97.0,
           "min": null,
           "max": null,
           "editable": false
@@ -139,7 +144,8 @@
           "default": 1,
           "min": 0,
           "max": 5,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "device_conn_type",
@@ -147,12 +153,13 @@
           "default": 0,
           "min": 0,
           "max": 5,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "C14",
           "label": "C14",
-          "default": 360.0,
+          "default": 25.0,
           "min": null,
           "max": null,
           "editable": false
@@ -160,7 +167,7 @@
         {
           "name": "C15",
           "label": "C15",
-          "default": 3.0,
+          "default": 39.0,
           "min": null,
           "max": null,
           "editable": false
@@ -168,7 +175,7 @@
         {
           "name": "C16",
           "label": "C16",
-          "default": 2.0,
+          "default": 54.0,
           "min": null,
           "max": null,
           "editable": false
@@ -176,7 +183,7 @@
         {
           "name": "C17",
           "label": "C17",
-          "default": 91.0,
+          "default": 68.0,
           "min": null,
           "max": null,
           "editable": false
@@ -184,7 +191,7 @@
         {
           "name": "C18",
           "label": "C18",
-          "default": 2.0,
+          "default": 85.0,
           "min": null,
           "max": null,
           "editable": false
@@ -192,7 +199,7 @@
         {
           "name": "C19",
           "label": "C19",
-          "default": 3.0,
+          "default": 100.0,
           "min": null,
           "max": null,
           "editable": false
@@ -200,7 +207,7 @@
         {
           "name": "C20",
           "label": "C20",
-          "default": 0.0,
+          "default": 115.0,
           "min": null,
           "max": null,
           "editable": false
@@ -208,7 +215,7 @@
         {
           "name": "C21",
           "label": "C21",
-          "default": 13.0,
+          "default": 129.0,
           "min": null,
           "max": null,
           "editable": false
@@ -258,7 +265,8 @@
           "default": 14,
           "min": 0,
           "max": 23,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "day_of_week",
@@ -266,7 +274,8 @@
           "default": 2,
           "min": 0,
           "max": 6,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "banner_pos",
@@ -274,12 +283,13 @@
           "default": 0,
           "min": 0,
           "max": 7,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "C1",
           "label": "C1",
-          "default": 2.0,
+          "default": 6.0,
           "min": null,
           "max": null,
           "editable": false
@@ -290,12 +300,13 @@
           "default": 5000,
           "min": 0,
           "max": 1000000,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "site_domain",
           "label": "site_domain",
-          "default": 445222.0,
+          "default": 168.0,
           "min": null,
           "max": null,
           "editable": false
@@ -303,7 +314,7 @@
         {
           "name": "site_category",
           "label": "site_category",
-          "default": 6.0,
+          "default": 13.0,
           "min": null,
           "max": null,
           "editable": false
@@ -314,12 +325,13 @@
           "default": 3000,
           "min": 0,
           "max": 1000000,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "app_domain",
           "label": "app_domain",
-          "default": 1645400.0,
+          "default": 288.0,
           "min": null,
           "max": null,
           "editable": false
@@ -327,7 +339,7 @@
         {
           "name": "app_category",
           "label": "app_category",
-          "default": 0.0,
+          "default": 17.0,
           "min": null,
           "max": null,
           "editable": false
@@ -335,7 +347,7 @@
         {
           "name": "device_id",
           "label": "device_id",
-          "default": 1999935.0,
+          "default": 2.0,
           "min": null,
           "max": null,
           "editable": false
@@ -343,7 +355,7 @@
         {
           "name": "device_model",
           "label": "device_model",
-          "default": 9837.0,
+          "default": 97.0,
           "min": null,
           "max": null,
           "editable": false
@@ -354,7 +366,8 @@
           "default": 1,
           "min": 0,
           "max": 5,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "device_conn_type",
@@ -362,12 +375,13 @@
           "default": 0,
           "min": 0,
           "max": 5,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "C14",
           "label": "C14",
-          "default": 360.0,
+          "default": 25.0,
           "min": null,
           "max": null,
           "editable": false
@@ -375,7 +389,7 @@
         {
           "name": "C15",
           "label": "C15",
-          "default": 3.0,
+          "default": 39.0,
           "min": null,
           "max": null,
           "editable": false
@@ -383,7 +397,7 @@
         {
           "name": "C16",
           "label": "C16",
-          "default": 2.0,
+          "default": 54.0,
           "min": null,
           "max": null,
           "editable": false
@@ -391,7 +405,7 @@
         {
           "name": "C17",
           "label": "C17",
-          "default": 91.0,
+          "default": 68.0,
           "min": null,
           "max": null,
           "editable": false
@@ -399,7 +413,7 @@
         {
           "name": "C18",
           "label": "C18",
-          "default": 2.0,
+          "default": 85.0,
           "min": null,
           "max": null,
           "editable": false
@@ -407,7 +421,7 @@
         {
           "name": "C19",
           "label": "C19",
-          "default": 3.0,
+          "default": 100.0,
           "min": null,
           "max": null,
           "editable": false
@@ -415,7 +429,7 @@
         {
           "name": "C20",
           "label": "C20",
-          "default": 0.0,
+          "default": 115.0,
           "min": null,
           "max": null,
           "editable": false
@@ -423,7 +437,7 @@
         {
           "name": "C21",
           "label": "C21",
-          "default": 13.0,
+          "default": 129.0,
           "min": null,
           "max": null,
           "editable": false
@@ -469,39 +483,44 @@
           "default": 1,
           "min": 1,
           "max": 6,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "pickup_longitude",
           "label": "Pickup Longitude",
           "default": -73.985,
-          "min": null,
-          "max": null,
-          "editable": true
+          "min": -74.05,
+          "max": -73.7,
+          "editable": true,
+          "hint": "Decimal degrees, negative = West. NYC ranges roughly -74.05 to -73.70 (prefilled = Manhattan)."
         },
         {
           "name": "pickup_latitude",
           "label": "Pickup Latitude",
           "default": 40.758,
-          "min": null,
-          "max": null,
-          "editable": true
+          "min": 40.55,
+          "max": 40.9,
+          "editable": true,
+          "hint": "Decimal degrees, positive = North. NYC ranges roughly 40.55 to 40.90 (prefilled = Manhattan)."
         },
         {
           "name": "dropoff_longitude",
           "label": "Dropoff Longitude",
           "default": -73.978,
-          "min": null,
-          "max": null,
-          "editable": true
+          "min": -74.05,
+          "max": -73.7,
+          "editable": true,
+          "hint": "Same format as pickup longitude \u2014 decimal degrees, negative = West."
         },
         {
           "name": "dropoff_latitude",
           "label": "Dropoff Latitude",
           "default": 40.751,
-          "min": null,
-          "max": null,
-          "editable": true
+          "min": 40.55,
+          "max": 40.9,
+          "editable": true,
+          "hint": "Same format as pickup latitude \u2014 decimal degrees, positive = North."
         },
         {
           "name": "hour",
@@ -509,7 +528,8 @@
           "default": 14,
           "min": 0,
           "max": 23,
-          "editable": true
+          "editable": true,
+          "hint": null
         },
         {
           "name": "day_of_week",
@@ -554,7 +574,7 @@
         {
           "name": "trip_km",
           "label": "trip_km",
-          "default": 2.1507,
+          "default": 3.4062,
           "min": null,
           "max": null,
           "editable": false
@@ -562,7 +582,7 @@
         {
           "name": "jfk_pickup_km",
           "label": "jfk_pickup_km",
-          "default": 21.195,
+          "default": 19.7613,
           "min": null,
           "max": null,
           "editable": false
@@ -570,7 +590,7 @@
         {
           "name": "jfk_dropoff_km",
           "label": "jfk_dropoff_km",
-          "default": 21.189,
+          "default": 19.9543,
           "min": null,
           "max": null,
           "editable": false
@@ -578,7 +598,7 @@
         {
           "name": "lga_pickup_km",
           "label": "lga_pickup_km",
-          "default": 9.6108,
+          "default": 10.7256,
           "min": null,
           "max": null,
           "editable": false
@@ -586,7 +606,7 @@
         {
           "name": "lga_dropoff_km",
           "label": "lga_dropoff_km",
-          "default": 9.5199,
+          "default": 10.9763,
           "min": null,
           "max": null,
           "editable": false
@@ -594,7 +614,7 @@
         {
           "name": "ewr_pickup_km",
           "label": "ewr_pickup_km",
-          "default": 17.8202,
+          "default": 18.7776,
           "min": null,
           "max": null,
           "editable": false
@@ -602,7 +622,7 @@
         {
           "name": "ewr_dropoff_km",
           "label": "ewr_dropoff_km",
-          "default": 17.9673,
+          "default": 18.953,
           "min": null,
           "max": null,
           "editable": false

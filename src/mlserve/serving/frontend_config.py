@@ -32,7 +32,7 @@ def _fields(cfg: ModelConfig, feature_order: list[str], defaults: dict) -> list[
         f = by_name.get(name)
         if f is not None:
             out.append({"name": name, "label": f.label, "default": f.default,
-                        "min": f.min, "max": f.max, "editable": True})
+                        "min": f.min, "max": f.max, "editable": True, "hint": f.hint})
         else:
             out.append({"name": name, "label": name,
                         "default": round(float(defaults.get(name, 0.0)), 4),
