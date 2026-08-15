@@ -1,4 +1,4 @@
-# mlserve — Production ML Inference Platform
+# mlserve: Production ML Inference Platform
 
 A containerised ML inference platform that serves three model endpoints — two for
 AdTech CTR classification (**XGBoost-Python** vs **XGBoost-ONNX/C++**) and one for
@@ -13,21 +13,24 @@ ONNX execution engines serving identical model weights.**
 
 ---
 
-## What this is, and how it differs from the original blueprint
+## What this project includes
 
-This implementation deliberately diverges from a pure MLServer/NGINX design in a
-few places. Each change serves the goals of *local-first, simple, readable, and
-cheap to deploy* — and none of them weaken the resume story.
+mlserve is a small but complete ML platform: it trains models, tracks and
+registers them, serves them behind a standard inference API, and observes
+that API in production — all runnable on a laptop with zero paid infrastructure.
 
-| Original plan | Here | Why |
-|---|---|---|
-| `seldonio/mlserver` container | Custom **FastAPI** server implementing the V2 protocol | `uv`-runnable, readable, self-hosts `/metrics`, and makes the `XGBoostRunner`/`ONNXRunner` abstraction explicit. The V2 contract is preserved, so "implemented the Open Inference Protocol V2" stays fully defensible. |
-| NGINX reverse proxy | FastAPI serves the built React app + API on one port | One fewer moving part; one port for both local and HF. |
-| One Docker-Compose monolith | **Three tiers**: `uv`-only → Compose → single HF container | Local-first priority; HF free tier can't run 6 always-on services. |
-| 6 GB Kaggle datasets, required | **Synthetic-by-default** data with planted signal; Kaggle is an opt-in switch | The whole pipeline runs end-to-end with zero downloads and no Kaggle account. |
-| MLflow tracking server required | MLflow defaults to a local **file store** (`./mlruns`) | Training works on a bare checkout; the Compose stack adds the live UI. |
+| Component | What it does |
+|---|---|
+| **Training pipeline** | Generates data (synthetic or real Kaggle), engineers features, trains XGBoost models, and logs every run to MLflow. |
+| **Model registry (MLflow)** | Versions every trained model and promotes the best one to "Production" — the same pattern used in real MLOps stacks. |
+| **Serving layer (FastAPI)** | Implements the industry-standard **KServe V2 Inference Protocol**, so any V2-compatible client can call it. A pluggable `Runner` abstraction lets the same model be served through different execution engines. |
+| **Python vs. ONNX comparison** | The Avazu CTR model is served two ways — via the native XGBoost Python API and via a compiled ONNX Runtime engine — on **identical weights**, so latency differences are measurable and attributable purely to the runtime. |
+| **Observability (Prometheus + Grafana)** | Every request is instrumented; a provisioned-as-code dashboard shows request rate, latency percentiles, concurrency, and error rate in real time. |
+| **Frontend (React)** | A config-driven UI for sending live predictions and reading model metadata — no hardcoded model list, it's generated from training artifacts. |
+| **Load testing (k6)** | Scripted traffic that drives concurrency high enough to actually separate the two serving engines' tail latencies. |
 
-Everything below is verified to run end-to-end on synthetic data.
+Everything above is verified to run end-to-end on synthetic data with no
+external accounts or downloads.
 
 ---
 
@@ -56,9 +59,30 @@ Everything below is verified to run end-to-end on synthetic data.
    MLflow (file store ./mlruns, or the mlflow service in Tier 2) tracks every run.
 ```
 
-**Request flow:** `POST /v2/models/{name}/infer` -> FastAPI parses the V2 request
--> `ModelRegistry` dispatches to the runner -> runner predicts -> V2 response. A
-middleware records `rest_server_*` Prometheus metrics on every call.
+**Request flow:** `POST /v2/models/{name}/infer` → FastAPI parses the V2 request
+→ `ModelRegistry` looks up the model by name and dispatches to its `Runner` →
+the runner predicts → the result is wrapped back into a V2 response. A
+middleware records `rest_server_*` Prometheus metrics on every call, regardless
+of which runner served it.
+
+**Key building blocks:**
+
+- **`ModelRegistry`** — a simple in-memory map from model name to a loaded
+  `Runner`, built once at startup from the trained artifacts. This is what
+  makes adding a fourth model or a third engine a one-line registration
+  instead of a new code path.
+- **`Runner` abstraction** — `BaseRunner` defines one method, `predict()`.
+  `XGBoostRunner` calls the native XGBoost API (FP64 input); `ONNXRunner` calls
+  a compiled ONNX Runtime session (FP32 input). Both wrap the *same trained
+  weights*, so switching engines never changes what the model predicts —
+  only how fast it predicts it.
+- **V2 Inference Protocol** — the request/response schema (`pydantic` models
+  in `common/`) matches KServe's Open Inference Protocol V2, the same
+  contract used by Seldon, MLServer, and Triton. Any standard V2 client can
+  call this API without modification.
+- **MLflow** — every training run (params, metrics, artifacts) is logged and
+  versioned; the best version per model is promoted to "Production" and is
+  what the serving layer loads.
 
 ---
 
@@ -92,6 +116,27 @@ mlserve/
 
 ---
 
+## Why three tiers?
+
+Not every environment needs (or can afford) the same amount of infrastructure.
+mlserve is built as three progressively heavier layers on top of the *same*
+code and artifacts, so you pick the tier that matches what you're trying to
+do rather than always paying for the biggest setup:
+
+| Tier | Environment | Adds | Best for |
+|---|---|---|---|
+| **1. Local (`uv`)** | Bare machine, no Docker | Training, ONNX export, MLflow file-store tracking, the FastAPI serving API | Fast iteration and development |
+| **2. Docker Compose** | Local Docker | Live MLflow UI, Prometheus, Grafana dashboard | Full observability and side-by-side latency comparisons |
+| **3. Hugging Face Spaces** | Free cloud container | A public URL, self-trained at build time | Sharing a live, working demo |
+
+Each tier is a superset in capability, not a rewrite: the same `Runner`
+classes, the same V2 API, and the same trained artifacts are used everywhere.
+Only the amount of surrounding infrastructure changes — which also mirrors a
+real-world progression from a developer's laptop to a fully observable
+staging stack to a lightweight public deployment.
+
+---
+
 ## Tier 1 — run locally with `uv` (the priority path)
 
 No Docker. One command per stage. The whole thing finishes in well under a minute
@@ -102,7 +147,9 @@ on synthetic data.
 make install                 # uv sync (creates .venv, installs everything)
 
 # 1-4. Full pipeline: data -> train -> ONNX -> register -> frontend config
-make pipeline                # ROWS=100000 SOURCE=synthetic by default
+# The Makefile defaults to SOURCE=kaggle ROWS=3000000; pass SOURCE=synthetic
+# for the zero-setup path that requires no Kaggle account.
+make pipeline SOURCE=synthetic ROWS=100000
 
 # 5. Build the UI (optional; the API works without it)
 make frontend-build
@@ -138,13 +185,24 @@ Want the live MLflow UI without Docker? `make mlflow-ui` (reads `./mlruns`).
 
 ## Tier 2 — full local stack with Docker Compose
 
-Adds the live MLflow UI, Prometheus, and Grafana around the app. Train on the host
-first so `./artifacts` has models (they're mounted into the app container).
+Wraps the same app with the live MLflow UI, Prometheus, and Grafana — the
+observability stack needed to actually see the Python-vs-ONNX latency
+difference under load.
 
 ```bash
-make pipeline          # produce models on the host
-make stack-up          # docker compose up --build -d
+# With Kaggle data (default, requires ~/.kaggle/kaggle.json):
+make stack-up
+
+# With synthetic data (zero-setup):
+make stack-up SOURCE=synthetic ROWS=100000
 ```
+
+`stack-up` starts the MLflow container, runs the full pipeline against it
+(`$(MAKE) pipeline MLFLOW_TRACKING_URI=http://localhost:5001`), then brings up
+the rest of the stack. `./artifacts` is volume-mounted into the app container
+(read-only) and `./mlruns` is mounted straight into the mlflow container, so
+runs from `make pipeline`/`make train` show up in both `make mlflow-ui` and the
+Dockerized MLflow UI without any sync step.
 
 | Service | URL | Notes |
 |---|---|---|
@@ -159,9 +217,13 @@ make stack-up          # docker compose up --build -d
 
 ## Tier 3 — deploy to Hugging Face Spaces (free, single container)
 
-The Space image in `deploy/huggingface/` trains a small synthetic model **at build
-time**, so it needs no dataset and no external services. Prometheus `/metrics`
-stays exposed; Grafana/Prometheus/MLflow are local-only.
+The lightest tier: a single container, no external services, meant for
+sharing a working demo rather than for benchmarking. The Space image in
+`deploy/huggingface/` trains a small synthetic model **at build time**, so it
+needs no dataset and no Kaggle account. Prometheus's `/metrics` endpoint stays
+exposed for inspection; Grafana/Prometheus-as-a-service/MLflow UI are
+intentionally left out since HF's free tier can't run several always-on
+containers.
 
 1. Create a new Space -> **SDK: Docker**.
 2. Copy `deploy/huggingface/Dockerfile` to the Space root as `Dockerfile`.
@@ -193,6 +255,34 @@ The feature-engineering and model code are identical for synthetic and real data
 
 ---
 
+## Frontend: 7 editable inputs, 22 model features
+
+The Avazu model is always called with all **22 features**. The UI only exposes
+**7 editable fields** (hour, day, banner position, device type, connection type,
+site frequency, app frequency). This is a deliberate UX choice, not a model
+simplification.
+
+How it works end-to-end:
+
+1. `configs/avazu.yaml` lists 7 `form_fields` — these become `editable: true`
+   entries in `models.generated.json`.
+2. All 22 features appear in `models.generated.json` under `fields`; the 15
+   non-listed ones carry `editable: false` and a `default` equal to the
+   **training-set median** (written by `features/base.py` into `feature_meta.json`
+   during preprocessing).
+3. `PredictionForm.jsx`'s `assembleVector()` builds the full 22-element vector:
+   editable slots use the user's typed value; hidden slots use the stored median.
+4. The V2 request is sent with `shape: [1, 22]` and the server validates
+   `arr.shape[1] == runner.n_features` (22) before calling the model.
+
+The 15 hidden features are hashed ad-tech IDs (`site_domain`, `app_domain`,
+`device_id`, `C14`…`C21`) whose frequency-encoded integers are only meaningful
+relative to the training distribution — there is no sensible "user-entered"
+value for them. Pinning them to the training median is the standard serving
+strategy for features a real-time caller cannot provide.
+
+---
+
 ## The Python vs ONNX comparison
 
 Both `avazu-ctr-xgb-py` and `avazu-ctr-xgb-onnx` serve the **same trained booster**
@@ -217,12 +307,34 @@ you actually measure. That honesty is itself a good interview signal.
 
 k6 is a standalone Go binary (install: <https://k6.io/docs/get-started/installation/>).
 
+There are two scripts:
+
+| Script | Purpose |
+|---|---|
+| `load_testing/avazu_comparison.js` | Hammers `avazu-ctr-xgb-py` and `avazu-ctr-xgb-onnx` head-to-head. Ramps to 80 VUs with a spike stage. Tracks `py_inference_ms` and `onnx_inference_ms` as separate k6 Trend metrics. |
+| `load_testing/full_stack.js` | Exercises all three endpoints together (avazu-py, avazu-onnx, nyc-taxi-py) — useful for populating every Grafana panel with traffic. |
+
 ```bash
-k6 run load_testing/avazu_comparison.js                 # ramps to 80 VUs, py vs onnx
+# Head-to-head Python vs ONNX comparison (ramps to 80 VUs):
+k6 run load_testing/avazu_comparison.js
 k6 run --out json=load_testing/results/avazu.json load_testing/avazu_comparison.js
-# Against a deployed target:
+
+# All three endpoints (populates all Grafana panels):
+k6 run load_testing/full_stack.js
+
+# Against a deployed target (HF Spaces, Render, etc.):
 k6 run -e BASE_URL=https://<user>-mlserve.hf.space load_testing/avazu_comparison.js
 ```
+
+**Why Python ≈ ONNX on synthetic data.** A model trained on the default 100 000
+synthetic rows is small (few trees, shallow depth). At that size, a single
+tree-prediction takes ~0.01–0.1 ms, which is completely swamped by HTTP
+round-trip and FastAPI/JSON overhead (~5–20 ms). Both engines finish inference
+before the framework even processes the response. The divergence the project is
+built to show — ONNX winning on tail latency at concurrency — requires the
+**full Avazu model** (trained on millions of real rows, deeper trees, 300 boost
+rounds) hit with the 80-VU spike stage. Train on real Kaggle data first, then
+run the comparison and report what you actually measure.
 
 Watch the Grafana latency panel during the spike and screenshot it — that's your
 evidence.
@@ -248,8 +360,24 @@ total predictions, and taxi p95 — and auto-provisions on `make stack-up`.
 ## Testing & linting
 
 ```bash
-make test     # pytest: end-to-end pipeline + V2 round-trip + generator signal
-make lint     # ruff
+make test     # pytest tests/test_pipeline.py
+make lint     # ruff check src tests
+```
+
+`tests/test_pipeline.py` is the single end-to-end test file. It runs the full
+in-memory pipeline on tiny synthetic data — no external services, no disk
+fixtures, no Kaggle account needed. What each test covers:
+
+| Test | What it checks |
+|---|---|
+| `test_preprocess_feature_count[avazu-22]` | `AvazuPreprocessor` produces exactly 22 features, in the canonical `FEATURE_ORDER` from `features/avazu.py`; the val split has no NaN (no encoder leakage). |
+| `test_preprocess_feature_count[nyc_taxi-18]` | Same guarantee for the Taxi preprocessor and its 18 haversine + temporal features. |
+| `test_avazu_has_learnable_signal` | Trains a mini XGBoost on 20 000 synthetic rows and asserts `val_auc > 0.6` — guards the synthetic generator against accidentally producing random noise. |
+| `test_v2_protocol_roundtrip` | Round-trips an `InferRequest` through `request_to_array` and `array_to_response`; checks shape, dtype, and output values are preserved correctly by the V2 pydantic models. |
+
+Run a single test by name:
+```bash
+uv run --extra dev pytest -q -k test_v2_protocol_roundtrip
 ```
 
 ---
