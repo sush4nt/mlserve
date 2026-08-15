@@ -23,7 +23,9 @@ class FeatureField:
 
     `editable=False` fields are not shown; they are filled with `default` when
     assembling the full serving vector. This is how a human enters 7 friendly
-    values yet the model still receives all 22.
+    values yet the model still receives all 22. `hint` is optional helper text
+    shown under the input, for fields whose expected format isn't obvious
+    (e.g. decimal-degree coordinates).
     """
 
     name: str
@@ -32,6 +34,7 @@ class FeatureField:
     min: float | None = None
     max: float | None = None
     editable: bool = True
+    hint: str | None = None
 
 
 @dataclass(frozen=True)

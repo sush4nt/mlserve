@@ -47,6 +47,11 @@ export default function PredictionForm({ model }) {
               onChange={(e) => setValues({ ...values, [f.name]: e.target.value })}
               className="mt-1 w-full rounded bg-slate-900 px-2 py-1 font-mono text-slate-100 outline-none ring-1 ring-slate-700 focus:ring-blue-500"
             />
+            {f.hint && (
+              <span className="mt-1 block text-xs leading-snug text-slate-500">
+                {f.hint}
+              </span>
+            )}
           </label>
         ))}
       </div>
