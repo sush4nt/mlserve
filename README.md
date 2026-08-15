@@ -165,8 +165,41 @@ curl -s -X POST http://localhost:8080/v2/models/avazu-ctr-xgb-py/infer \
   -H "Content-Type: application/json" \
   -d '{"inputs":[{"name":"input-0","shape":[1,22],"datatype":"FP64",
        "data":[[14,2,0,1005,5000,3000,3,3000,200,5,100,150,1,0,10,320,50,1722,0,35,100,79]]}]}'
-# -> {"model_name":"avazu-ctr-xgb-py", ... "outputs":[{"data":[0.54...]}]}
 ```
+
+Response:
+
+```json
+{"model_name":"avazu-ctr-xgb-py", ... "outputs":[{"data":[0.54...]}]}
+```
+
+**What this `curl` command is doing.** It's a no-UI test of the exact same
+`/v2/models/{name}/infer` endpoint the React frontend calls internally — proof
+that the API works independently of the UI.
+
+- **`-X POST`** — sends an HTTP POST request. `/infer` runs a model and
+  returns a freshly computed result rather than fetching a stored resource,
+  and the input is a structured JSON payload too large/complex for a URL
+  query string, so POST (with a body) is the right verb — it's also what the
+  KServe V2 Inference Protocol spec requires for this endpoint.
+- **`-H "Content-Type: application/json"`** — sets a request *header*, i.e.
+  metadata about the request rather than the request itself. This one tells
+  FastAPI to parse the body as JSON so it can validate it against the
+  `InferRequest` pydantic model; without it, FastAPI may reject the body.
+- **`-d '...'`** — the request *body* (`-d` = "data"): the actual JSON payload
+  being sent. Here it's a V2 inference request with one named input tensor:
+  - `shape: [1, 22]` — 1 row, 22 features, matching the Avazu model's
+    `n_features` (the server rejects mismatched shapes, see `app.py`).
+  - `datatype: "FP64"` — the numeric precision the Python XGBoost runner
+    expects.
+  - `data` — the flat feature vector itself, in the exact order
+    `features/avazu.py`'s `FEATURE_ORDER` defines.
+
+**Calling a different model** means changing three things together: the URL
+segment (e.g. `avazu-ctr-xgb-onnx` or `nyc-taxi-fare-py`), the `shape`/`data`
+length (22 for Avazu, 18 for `nyc-taxi-fare-py` — see `featureOrder` in
+`frontend/src/config/models.generated.json`), and `datatype` (`FP32` for the
+ONNX runner, `FP64` for both Python runners).
 
 Want the live MLflow UI without Docker? `make mlflow-ui` (reads `./mlruns`).
 
