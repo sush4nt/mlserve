@@ -1,4 +1,4 @@
-# mlserve — Production ML Inference Platform
+# mlserve: Production ML Inference Platform
 
 A containerised ML inference platform that serves three model endpoints — two for
 AdTech CTR classification (**XGBoost-Python** vs **XGBoost-ONNX/C++**) and one for
@@ -13,21 +13,24 @@ ONNX execution engines serving identical model weights.**
 
 ---
 
-## What this is, and how it differs from the original blueprint
+## What this project includes
 
-This implementation deliberately diverges from a pure MLServer/NGINX design in a
-few places. Each change serves the goals of *local-first, simple, readable, and
-cheap to deploy* — and none of them weaken the resume story.
+mlserve is a small but complete ML platform: it trains models, tracks and
+registers them, serves them behind a standard inference API, and observes
+that API in production — all runnable on a laptop with zero paid infrastructure.
 
-| Original plan | Here | Why |
-|---|---|---|
-| `seldonio/mlserver` container | Custom **FastAPI** server implementing the V2 protocol | `uv`-runnable, readable, self-hosts `/metrics`, and makes the `XGBoostRunner`/`ONNXRunner` abstraction explicit. The V2 contract is preserved, so "implemented the Open Inference Protocol V2" stays fully defensible. |
-| NGINX reverse proxy | FastAPI serves the built React app + API on one port | One fewer moving part; one port for both local and HF. |
-| One Docker-Compose monolith | **Three tiers**: `uv`-only → Compose → single HF container | Local-first priority; HF free tier can't run 6 always-on services. |
-| 6 GB Kaggle datasets, required | **Synthetic-by-default** data with planted signal; Kaggle is an opt-in switch | The whole pipeline runs end-to-end with zero downloads and no Kaggle account. |
-| MLflow tracking server required | MLflow defaults to a local **file store** (`./mlruns`) | Training works on a bare checkout; the Compose stack adds the live UI. |
+| Component | What it does |
+|---|---|
+| **Training pipeline** | Generates data (synthetic or real Kaggle), engineers features, trains XGBoost models, and logs every run to MLflow. |
+| **Model registry (MLflow)** | Versions every trained model and promotes the best one to "Production" — the same pattern used in real MLOps stacks. |
+| **Serving layer (FastAPI)** | Implements the industry-standard **KServe V2 Inference Protocol**, so any V2-compatible client can call it. A pluggable `Runner` abstraction lets the same model be served through different execution engines. |
+| **Python vs. ONNX comparison** | The Avazu CTR model is served two ways — via the native XGBoost Python API and via a compiled ONNX Runtime engine — on **identical weights**, so latency differences are measurable and attributable purely to the runtime. |
+| **Observability (Prometheus + Grafana)** | Every request is instrumented; a provisioned-as-code dashboard shows request rate, latency percentiles, concurrency, and error rate in real time. |
+| **Frontend (React)** | A config-driven UI for sending live predictions and reading model metadata — no hardcoded model list, it's generated from training artifacts. |
+| **Load testing (k6)** | Scripted traffic that drives concurrency high enough to actually separate the two serving engines' tail latencies. |
 
-Everything below is verified to run end-to-end on synthetic data.
+Everything above is verified to run end-to-end on synthetic data with no
+external accounts or downloads.
 
 ---
 
@@ -56,9 +59,30 @@ Everything below is verified to run end-to-end on synthetic data.
    MLflow (file store ./mlruns, or the mlflow service in Tier 2) tracks every run.
 ```
 
-**Request flow:** `POST /v2/models/{name}/infer` -> FastAPI parses the V2 request
--> `ModelRegistry` dispatches to the runner -> runner predicts -> V2 response. A
-middleware records `rest_server_*` Prometheus metrics on every call.
+**Request flow:** `POST /v2/models/{name}/infer` → FastAPI parses the V2 request
+→ `ModelRegistry` looks up the model by name and dispatches to its `Runner` →
+the runner predicts → the result is wrapped back into a V2 response. A
+middleware records `rest_server_*` Prometheus metrics on every call, regardless
+of which runner served it.
+
+**Key building blocks:**
+
+- **`ModelRegistry`** — a simple in-memory map from model name to a loaded
+  `Runner`, built once at startup from the trained artifacts. This is what
+  makes adding a fourth model or a third engine a one-line registration
+  instead of a new code path.
+- **`Runner` abstraction** — `BaseRunner` defines one method, `predict()`.
+  `XGBoostRunner` calls the native XGBoost API (FP64 input); `ONNXRunner` calls
+  a compiled ONNX Runtime session (FP32 input). Both wrap the *same trained
+  weights*, so switching engines never changes what the model predicts —
+  only how fast it predicts it.
+- **V2 Inference Protocol** — the request/response schema (`pydantic` models
+  in `common/`) matches KServe's Open Inference Protocol V2, the same
+  contract used by Seldon, MLServer, and Triton. Any standard V2 client can
+  call this API without modification.
+- **MLflow** — every training run (params, metrics, artifacts) is logged and
+  versioned; the best version per model is promoted to "Production" and is
+  what the serving layer loads.
 
 ---
 
@@ -89,6 +113,27 @@ mlserve/
 |-- deploy/huggingface/       # Tier 3: self-contained Space Dockerfile + card
 +-- tests/                    # end-to-end pytest
 ```
+
+---
+
+## Why three tiers?
+
+Not every environment needs (or can afford) the same amount of infrastructure.
+mlserve is built as three progressively heavier layers on top of the *same*
+code and artifacts, so you pick the tier that matches what you're trying to
+do rather than always paying for the biggest setup:
+
+| Tier | Environment | Adds | Best for |
+|---|---|---|---|
+| **1. Local (`uv`)** | Bare machine, no Docker | Training, ONNX export, MLflow file-store tracking, the FastAPI serving API | Fast iteration and development |
+| **2. Docker Compose** | Local Docker | Live MLflow UI, Prometheus, Grafana dashboard | Full observability and side-by-side latency comparisons |
+| **3. Hugging Face Spaces** | Free cloud container | A public URL, self-trained at build time | Sharing a live, working demo |
+
+Each tier is a superset in capability, not a rewrite: the same `Runner`
+classes, the same V2 API, and the same trained artifacts are used everywhere.
+Only the amount of surrounding infrastructure changes — which also mirrors a
+real-world progression from a developer's laptop to a fully observable
+staging stack to a lightweight public deployment.
 
 ---
 
@@ -140,7 +185,9 @@ Want the live MLflow UI without Docker? `make mlflow-ui` (reads `./mlruns`).
 
 ## Tier 2 — full local stack with Docker Compose
 
-Adds the live MLflow UI, Prometheus, and Grafana around the app.
+Wraps the same app with the live MLflow UI, Prometheus, and Grafana — the
+observability stack needed to actually see the Python-vs-ONNX latency
+difference under load.
 
 ```bash
 # With Kaggle data (default, requires ~/.kaggle/kaggle.json):
@@ -170,9 +217,13 @@ Dockerized MLflow UI without any sync step.
 
 ## Tier 3 — deploy to Hugging Face Spaces (free, single container)
 
-The Space image in `deploy/huggingface/` trains a small synthetic model **at build
-time**, so it needs no dataset and no external services. Prometheus `/metrics`
-stays exposed; Grafana/Prometheus/MLflow are local-only.
+The lightest tier: a single container, no external services, meant for
+sharing a working demo rather than for benchmarking. The Space image in
+`deploy/huggingface/` trains a small synthetic model **at build time**, so it
+needs no dataset and no Kaggle account. Prometheus's `/metrics` endpoint stays
+exposed for inspection; Grafana/Prometheus-as-a-service/MLflow UI are
+intentionally left out since HF's free tier can't run several always-on
+containers.
 
 1. Create a new Space -> **SDK: Docker**.
 2. Copy `deploy/huggingface/Dockerfile` to the Space root as `Dockerfile`.
