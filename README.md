@@ -111,6 +111,8 @@ mlserve/
 |-- monitoring/               # prometheus.yml + grafana provisioning + dashboard JSON
 |-- load_testing/             # k6 scripts
 |-- deploy/huggingface/       # Tier 3: self-contained Space Dockerfile + card
+|-- scripts/                  # run_stage.sh — Makefile stage banners + per-stage logs
+|-- logs/                     # generated: mlserve.log + make/<stage>.log (gitignored)
 +-- tests/                    # end-to-end pytest
 ```
 
@@ -236,6 +238,23 @@ the rest of the stack. `./artifacts` is volume-mounted into the app container
 (read-only) and `./mlruns` is mounted straight into the mlflow container, so
 runs from `make pipeline`/`make train` show up in both `make mlflow-ui` and the
 Dockerized MLflow UI without any sync step.
+
+**Why `docker compose` and not plain `docker run`?** `docker run` starts one
+container from one image, with every option (ports, volumes, env, network)
+passed as flags each time. This stack needs **four** containers (`app`,
+`mlflow`, `prometheus`, `grafana`) that must all reach each other by name —
+`docker-compose.yml` declares each service's config once, and `docker compose
+up` starts them together on a shared network in one idempotent command. `up`
+reconciles state (safe to re-run), and the matching `docker compose down` tears
+down all four containers plus the network in one shot, instead of four manual
+`docker stop`/`docker rm` calls.
+
+**Docker Desktop must actually be running first.** `docker`/`docker compose`
+are just CLI clients that talk to a background daemon (`dockerd`) over a Unix
+socket; on macOS that daemon only exists while the Docker Desktop app is open.
+Installing the CLI does not start it — see
+[Troubleshooting](#troubleshooting) if `stack-up` fails with `Cannot connect
+to the Docker daemon`.
 
 | Service | URL | Notes |
 |---|---|---|
@@ -504,6 +523,90 @@ total predictions, and taxi p95 — and auto-provisions on `make stack-up`.
 
 ---
 
+## Logging & debugging
+
+Every `make` command and every Python module writes somewhere durable, not
+just to the scrolling terminal — so when `make pipeline` or `make stack-up`
+fails several stages in, you don't have to scroll back through mixed
+`npm`/`docker`/`uv` output to find out what actually broke. Run `make
+logs-help` any time for a one-line reminder of the below.
+
+There are two independent logging layers, and they answer different questions:
+
+| Layer | Where | Answers |
+|---|---|---|
+| **Per-stage transcripts** | `logs/make/<stage>.log` | "What did *this* `make` stage print, top to bottom?" — captures raw stdout+stderr from any tool (uv, npm, docker compose, kaggle), not just Python. |
+| **Python application log** | `logs/mlserve.log` | "What has `mlserve` code logged, across every run?" — a single rotating file with every `get_logger()` call from any module (training, serving, registry, ...), including runs started outside `make` (e.g. `uv run mlserve-serve` directly). |
+
+### How stage banners work
+
+Every non-trivial `make` target (`prepare`, `train`, `export`, `register`,
+`frontend-config`, `frontend-build`, `serve`, `test`, `lint`, the Docker steps
+in `stack-up`, `download-data`) is routed through `scripts/run_stage.sh`,
+which:
+
+1. Prints a `==> STAGE: <name>` banner before running.
+2. Streams the command's output live, exactly as before — nothing is hidden.
+3. Simultaneously saves the full transcript to `logs/make/<name>.log` (`tee`,
+   overwritten on each run).
+4. Prints `<== STAGE OK` or `<== STAGE FAILED (exit N) -- see <logfile>` after,
+   with elapsed time, and exits with the command's real exit code — so a
+   failure still stops `make pipeline`/`make stack-up` at exactly that stage
+   (verified: `PIPESTATUS[0]` is used specifically so `tee` piping doesn't
+   mask a failing command's exit code).
+
+```bash
+make pipeline SOURCE=synthetic ROWS=100000
+# ...
+# ==> [14:02:11] STAGE: train
+# ...
+# <== [14:02:19] STAGE FAILED: train (exit 1, 8s) -- see logs/make/train.log
+#   ^ make stops here; prepare's log is untouched, so you know that part passed.
+
+cat logs/make/train.log          # full output of just the failed stage
+tail -f logs/make/*.log          # watch every stage live during a long pipeline run
+grep -l 'STAGE FAILED' logs/make/*.log   # find which stage(s) failed in the last run
+```
+
+### Python-side logging
+
+`common/logging.py`'s `get_logger()` is what every module calls instead of
+`print()` or configuring its own handlers — one place controls format, level,
+and destination for the whole codebase. It now attaches two handlers:
+
+- **Console** (unchanged): short, human-readable, `INFO` and above by default.
+- **Rotating file** (new): the same messages, plus process ID, written to
+  `logs/mlserve.log` and rotated at 5 MB × 3 backups so it can't grow
+  unbounded across many training runs or a long-lived `make serve` process.
+
+Environment variables (all optional):
+
+| Variable | Default | Effect |
+|---|---|---|
+| `MLSERVE_LOG_LEVEL` | `INFO` | Set to `DEBUG` for verbose output, e.g. `MLSERVE_LOG_LEVEL=DEBUG make serve`. |
+| `MLSERVE_LOG_TO_FILE` | `1` | Set to `0` to disable the file handler (console-only). |
+| `MLSERVE_LOGS_DIR` | `./logs` | Redirect both `mlserve.log` and `make/` transcripts elsewhere (e.g. in a container with a mounted log volume). |
+
+### Tier 2 (Docker Compose) — no command changes, one volume mount
+
+`make stack-up`/`make stack-down` run exactly as before; both `docker compose`
+invocations inside them are already wrapped by `run_stage.sh` like any other
+stage, so they get `logs/make/stack-up-mlflow.log` and
+`logs/make/stack-up-app.log` on your **host** automatically. The `pipeline`
+sub-stages that `stack-up` runs against the Dockerized MLflow also execute on
+the host (not in a container), so they log to `logs/` exactly like Tier 1.
+
+The one thing that *is* different: once the `app` container is running,
+its Python file handler writes `mlserve.log` inside the container's own
+filesystem. Without a volume mount that file would disappear whenever the
+container is removed or rebuilt (`docker compose logs app` still shows the
+console output, just not the rotating file). `docker-compose.yml` mounts
+`./logs:/app/logs` for exactly this reason, so `logs/mlserve.log` on your host
+contains entries from the containerized app too, interleaved with anything you
+ran locally.
+
+---
+
 ## Testing & linting
 
 ```bash
@@ -555,6 +658,11 @@ uv run --extra dev pytest -q -k test_v2_protocol_roundtrip
 - **Frontend build fails on missing `models.generated.json`** -> run
   `make frontend-config` (or `make pipeline`) first; a copy is committed too.
 - **404 on infer** -> the model isn't trained yet; run `make pipeline`.
+- **`Cannot connect to the Docker daemon` on `make stack-up`** -> the Docker
+  CLI is installed but the background daemon isn't running. On macOS/Windows,
+  open the **Docker Desktop** app and wait for it to report "running" (~10–30s
+  on first launch), then verify with `docker info` before retrying. Tier 1
+  (`make serve`) never needs Docker, so this only surfaces on Tier 2/3 commands.
 
 ## License
 

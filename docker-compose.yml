@@ -20,6 +20,7 @@ services:
       - "8080:8080"
     volumes:
       - ./artifacts:/app/artifacts:ro   # serve host-trained models live
+      - ./logs:/app/logs                # persist mlserve.log on the host across restarts/rebuilds
     environment:
       MLSERVE_PORT: "8080"
     healthcheck:

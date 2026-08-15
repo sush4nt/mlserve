@@ -35,7 +35,11 @@ CONFIG_DIR = Path(os.getenv("MLSERVE_CONFIG_DIR", ROOT / "configs"))
 FRONTEND_DIST = Path(os.getenv("MLSERVE_FRONTEND_DIST", ROOT / "frontend" / "dist"))
 FRONTEND_CONFIG = ROOT / "frontend" / "src" / "config" / "models.generated.json"
 
+# All logging (Python file handler + Makefile stage logs) lands under one
+# directory so "where do I look when something fails" has one answer.
+LOGS_DIR = Path(os.getenv("MLSERVE_LOGS_DIR", ROOT / "logs"))
+
 
 def ensure_dirs() -> None:
-    for d in (RAW_DIR, PROCESSED_DIR, MODELS_DIR):
+    for d in (RAW_DIR, PROCESSED_DIR, MODELS_DIR, LOGS_DIR):
         d.mkdir(parents=True, exist_ok=True)
