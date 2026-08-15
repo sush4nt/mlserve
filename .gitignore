@@ -28,6 +28,9 @@ frontend/dist/
 # Load-test output
 load_testing/results/
 
+# Logs (Python file handler + per-Makefile-stage transcripts)
+logs/
+
 # OS / editor
 .DS_Store
 .idea/
